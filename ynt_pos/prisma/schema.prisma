@@ -1,0 +1,126 @@
+// prisma/schema.prisma
+
+// ==============================
+// Generators & Datasource
+// ==============================
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+
+}
+
+// ==============================
+// Enums
+// ==============================
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
+
+enum OrderStatus {
+  NEW_ORDER
+  IN_DESIGN
+  WAITING_APPROVAL
+  IN_PRODUCTION
+  COMPLETED
+  CANCELLED
+}
+
+// ==============================
+// SECURITY & USER AUTHENTICATION
+// ==============================
+model User {
+  id        Int          @id @default(autoincrement())
+  email     String       @unique
+  password  String       // hashed password
+  role      Role         @default(EMPLOYEE)
+
+  logs      ActivityLog[]
+
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@map("users")
+}
+
+// Audit trail of actions in the system
+model ActivityLog {
+  id         Int      @id @default(autoincrement())
+
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
+
+  action     String
+  targetType String
+  targetId   Int?
+
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@map("activity_logs")
+}
+
+// ==============================
+// CORE POS MODELS
+// ==============================
+
+// Customer placing orders
+model Customer {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String   @unique
+  email     String?
+
+  orders    Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("customers")
+}
+
+// Order for DTF printing
+model Order {
+  id          Int          @id @default(autoincrement())
+  orderId     String       @unique
+  status      OrderStatus  @default(NEW_ORDER)
+
+  // Money fields as Decimal for accuracy
+  totalDue    Decimal      @db.Decimal(10, 2)
+  depositPaid Decimal      @default(0) @db.Decimal(10, 2)
+
+  artworkLink String?
+
+  customerId  Int
+  customer    Customer     @relation(fields: [customerId], references: [id])
+
+  items       OrderItem[]
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([customerId])
+  @@map("orders")
+}
+
+// Line items per order (e.g. each print job)
+model OrderItem {
+  id          Int      @id @default(autoincrement())
+
+  description String
+
+  // Size + pricing – also Decimal for precision
+  sqInches    Decimal  @db.Decimal(10, 2)
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  quantity    Int
+  subtotal    Decimal  @db.Decimal(10, 2)
+
+  orderId     Int
+  order       Order    @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@map("order_items")
+}

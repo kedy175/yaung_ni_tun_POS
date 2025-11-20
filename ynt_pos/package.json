@@ -11,11 +11,13 @@
     "prisma:generate": "prisma generate"
   },
   "dependencies": {
+    "@lucia-auth/adapter-prisma": "^4.0.1",
     "@prisma/adapter-pg": "^7.0.0",
     "@prisma/client": "^7.0.0",
     "bcrypt": "^6.0.0",
     "dotenv": "^17.2.3",
     "jsonwebtoken": "^9.0.2",
+    "lucia": "^3.2.2",
     "next": "16.0.3",
     "pg": "^8.16.3",
     "prisma": "^7.0.0",
